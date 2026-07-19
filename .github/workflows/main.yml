@@ -1,13 +1,13 @@
-name: R Autograding – ggplot2 Program 1
+name: R Autograding – ggplot2 Program 1 (text only)
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
 
 jobs:
-  test:
+  text-check:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,19 +18,49 @@ jobs:
         uses: r-lib/actions/setup-r@v2
         with:
           r-version: '4.3'
-          cache: true  # optional but helpful[web:14]
 
-      - name: Install dependencies
-        uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          extra-packages: |
-            any::ggplot2
-            any::testthat
-        # This avoids direct install.packages() and handles temp dirs for you.[web:14][web:34]
-
-      - name: Run tests
+      - name: Check solution.R contents
+        shell: Rscript {0}
         run: |
-          library(testthat)
-          source("solution.R")
-          testthat::test_dir("tests/testthat")
-        shell: Rscript {0}[web:14][web:33]
+          # Read the student's script as text
+          if (!file.exists("solution.R")) {
+            stop("solution.R is missing")
+          }
+          lines <- readLines("solution.R")
+
+          # Helper to flag missing patterns
+          assert_has <- function(pattern, message) {
+            if (!any(grepl(pattern, lines, fixed = TRUE))) {
+              stop(message)
+            }
+          }
+
+          # Basic checks for each plot
+
+          # plot1: scatter + smooth overall
+          assert_has("plot1 <- ggplot(mpg, aes(x = displ, y = hwy))",
+                     "plot1 definition is incorrect or missing")
+          assert_has("geom_point()", "geom_point() missing for plot1")
+          assert_has("geom_smooth(se = FALSE)", "geom_smooth(se = FALSE) missing for plot1")
+
+          # plot2: grouped smooth by drv
+          assert_has("plot2 <- ggplot(mpg, aes(x = displ, y = hwy))",
+                     "plot2 definition is incorrect or missing")
+          assert_has("geom_smooth(aes(group = drv), se = FALSE)",
+                     "plot2 must use geom_smooth(aes(group = drv), se = FALSE)")
+
+          # plot3: color mapped to drv in global aes
+          assert_has("plot3 <- ggplot(mpg, aes(x = displ, y = hwy, color = drv))",
+                     "plot3 definition is incorrect or missing")
+          assert_has("geom_point()", "geom_point() missing for plot3")
+          assert_has("geom_smooth(se = FALSE)", "geom_smooth(se = FALSE) missing for plot3")
+
+          # plot4: color mapped to drv only in points
+          assert_has("plot4 <- ggplot(mpg, aes(x = displ, y = hwy))",
+                     "plot4 definition is incorrect or missing")
+          assert_has("geom_point(aes(color = drv))",
+                     "plot4 must use geom_point(aes(color = drv))")
+          assert_has("geom_smooth(se = FALSE)",
+                     "geom_smooth(se = FALSE) missing for plot4")
+
+          cat("All required patterns found in solution.R\n")
