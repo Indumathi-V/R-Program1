@@ -17,18 +17,20 @@ jobs:
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
         with:
-          r-version: '4.3'   # recent R version[web:14]
+          r-version: '4.3'
+          cache: true  # optional but helpful[web:14]
 
-      - name: Install dependencies (ggplot2, testthat)
+      - name: Install dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: |
             any::ggplot2
             any::testthat
-        # This is the recommended way to install packages in Actions.[web:14][web:34]
+        # This avoids direct install.packages() and handles temp dirs for you.[web:14][web:34]
 
       - name: Run tests
         run: |
           library(testthat)
+          source("solution.R")
           testthat::test_dir("tests/testthat")
-        shell: Rscript {0}[web:33][web:37]
+        shell: Rscript {0}[web:14][web:33]
